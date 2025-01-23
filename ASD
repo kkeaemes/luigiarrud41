@@ -1,0 +1,89 @@
+@echo off
+setlocal EnableDelayedExpansion
+title Backup e Restauração de Drivers - WINchester
+color 3
+
+:: Verificar se o script está sendo executado como administrador
+:CheckPrivileges
+NET SESSION >nul 2>&1
+if "%errorlevel%"=="0" ( goto Start ) else (
+    echo Solicitando privilégios administrativas...
+    powershell -Command "Start-Process '%~f0' -Verb RunAs"
+    exit /B
+)
+
+:Start
+cls
+echo =================================
+echo   BACKUP E RESTAURACAO DE DRIVERS
+echo =================================
+echo Script disponibilizado por WINchester
+echo Visite www.youtube.com/WINchesterCanal
+echo.
+echo 1 - Fazer backup dos drivers
+echo 2 - Restaurar drivers
+echo 3 - Acessar tutorial
+echo 4 - Sair
+echo.
+set /p opcao=Digite sua opção: 
+
+if "%opcao%"=="1" (
+    echo.
+    echo Criando pasta de backup...
+    set "BackupDir=C:\DriversBackup"
+    if not exist "!BackupDir!" mkdir "!BackupDir!"
+    echo.
+    echo Iniciando o backup dos drivers...
+    dism /online /export-driver /destination:"!BackupDir!"
+    echo.
+    echo Backup concluído! Os drivers foram salvos em !BackupDir!
+    echo Visite www.youtube.com/WINchesterCanal para mais dicas!
+    pause
+    goto Start
+) else if "%opcao%"=="2" (
+    echo.
+    echo Criando um ponto de restauração do sistema...
+    powershell -Command "Checkpoint-Computer -Description 'Antes da restauração dos drivers' -RestorePointType 'MODIFY_SETTINGS'"
+    echo Ponto de restauração criado com sucesso.
+    echo.
+
+    set "DefaultBackupDir=C:\DriversBackup"
+    if exist "!DefaultBackupDir!" (
+        set /p "UseDefault=Encontramos o backup em !DefaultBackupDir!. Deseja usar este diretório? (S/N): "
+        if /I "!UseDefault!"=="S" (
+            set "RestoreDir=!DefaultBackupDir!"
+        ) else (
+            set /p "RestoreDir=Digite o caminho onde estão os drivers para restauração: "
+        )
+    ) else (
+        set /p "RestoreDir=Digite o caminho onde estão os drivers para restauração: "
+    )
+    echo.
+
+    echo Iniciando a restauração dos drivers de !RestoreDir!...
+    for /r "!RestoreDir!" %%f in (*.inf) do (
+        echo Instalando driver: %%f
+        pnputil /add-driver "%%f" /install
+    )
+    echo.
+    echo Restauração concluída!
+    echo Visite www.youtube.com/WINchesterCanal para mais dicas!
+    pause
+    goto Start
+) else if "%opcao%"=="3" (
+    echo.
+    echo Abrindo WINchester Canal no YouTube...
+    start https://youtu.be/ymOwOXdzHGQ
+    timeout /t 3
+    goto Start
+) else if "%opcao%"=="4" (
+    echo.
+    echo Saindo do programa...
+    timeout /t 2
+    exit
+) else (
+    echo.
+    echo Opção inválida! Por favor, digite um número entre 1 e 4.
+    timeout /t 3
+    goto Start
+)
